@@ -54,6 +54,7 @@ public class IngredientController {
 
         //need to return back parent id for hidden form property
         IngredientCommand ingredientCommand = new IngredientCommand();
+        ingredientCommand.setRecipeId(recipeId);//TODO: this line fix error presented when creating a new ingredient
         model.addAttribute("ingredient", ingredientCommand);
 
         //init uom

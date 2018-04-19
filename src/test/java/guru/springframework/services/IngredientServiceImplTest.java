@@ -8,7 +8,7 @@ import guru.springframework.converters.UnitOfMeasureCommandToUnitOfMeasure;
 import guru.springframework.converters.UnitOfMeasureToUnitOfMeasureCommand;
 import guru.springframework.domain.Ingredient;
 import guru.springframework.domain.Recipe;
-import guru.springframework.repositories.RecipeRepository;
+import guru.springframework.domain.UnitOfMeasure;
 import guru.springframework.repositories.reactive.RecipeReactiveRepository;
 import guru.springframework.repositories.reactive.UnitOfMeasureReactiveRepository;
 import org.junit.Before;
@@ -32,9 +32,6 @@ public class IngredientServiceImplTest {
     RecipeReactiveRepository recipeReactiveRepository;
 
     @Mock
-    RecipeRepository recipeRepository;
-
-    @Mock
     UnitOfMeasureReactiveRepository unitOfMeasureRepository;
 
     IngredientService ingredientService;
@@ -50,7 +47,7 @@ public class IngredientServiceImplTest {
         MockitoAnnotations.initMocks(this);
 
         ingredientService = new IngredientServiceImpl(ingredientToIngredientCommand, ingredientCommandToIngredient,
-                recipeReactiveRepository, unitOfMeasureRepository, recipeRepository);
+                recipeReactiveRepository, unitOfMeasureRepository);
     }
 
     @Test
@@ -96,22 +93,26 @@ public class IngredientServiceImplTest {
         command.setRecipeId("2");
         command.setUom(new UnitOfMeasureCommand());
         command.getUom().setId("1234");
-
-        Optional<Recipe> recipeOptional = Optional.of(new Recipe());
+        command.getUom().setDescription("uom-description");//TODO: this line fix error presented when creating a new ingredient
 
         Recipe savedRecipe = new Recipe();
         savedRecipe.addIngredient(new Ingredient());
         savedRecipe.getIngredients().iterator().next().setId("3");
 
-        when(recipeRepository.findById(anyString())).thenReturn(recipeOptional);
+        when(recipeReactiveRepository.findById(anyString())).thenReturn(Mono.just(new Recipe()));
         when(recipeReactiveRepository.save(any())).thenReturn(Mono.just(savedRecipe));
+
+        UnitOfMeasure uom = new UnitOfMeasure();//TODO: this line fix error presented when creating a new ingredient
+        uom.setId("1234");//TODO: this line fix error presented when creating a new ingredient
+        uom.setDescription("uom-description");//TODO: this line fix error presented when creating a new ingredient
+        when(unitOfMeasureRepository.findById(anyString())).thenReturn(Mono.just(uom));//TODO: this line fix error presented when creating a new ingredient
 
         //when
         IngredientCommand savedCommand = ingredientService.saveIngredientCommand(command).block();
 
         //then
         assertEquals("3", savedCommand.getId());
-        verify(recipeRepository, times(1)).findById(anyString());
+        verify(recipeReactiveRepository, times(1)).findById(anyString());
         verify(recipeReactiveRepository, times(1)).save(any(Recipe.class));
 
     }
@@ -125,13 +126,14 @@ public class IngredientServiceImplTest {
         recipe.addIngredient(ingredient);
         Optional<Recipe> recipeOptional = Optional.of(recipe);
 
-        when(recipeRepository.findById(anyString())).thenReturn(recipeOptional);
+        when(recipeReactiveRepository.findById(anyString())).thenReturn(Mono.just(recipe));
+        when(recipeReactiveRepository.save(any())).thenReturn(Mono.just(recipe));
 
         //when
         ingredientService.deleteById("1", "3");
 
         //then
-        verify(recipeRepository, times(1)).findById(anyString());
-        verify(recipeRepository, times(1)).save(any(Recipe.class));
+        verify(recipeReactiveRepository, times(1)).findById(anyString());
+        verify(recipeReactiveRepository, times(1)).save(any(Recipe.class));
     }
 }
